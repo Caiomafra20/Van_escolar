@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexus Transportes | V11</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
+    <style>
+        :root { --primary: #0f172a; --secondary: #1e293b; --accent: #3b82f6; --success: #10b981; --danger: #ef4444; --bg: #f8fafc; --text: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg); height: 100vh; color: var(--text); overflow: hidden; }
+        
+        /* LOGIN */
+        #login-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--primary); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .login-card { background: white; padding: 2rem; border-radius: 16px; width: 100%; max-width: 380px; text-align: center; }
+        .login-card input { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; }
+        .btn { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
+        /* LAYOUT */
+        #app-container { display: none; width: 100vw; height: 100vh; display: grid; grid-template-columns: 260px 1fr; }
+        aside { background: var(--primary); color: white; padding: 1.5rem; display: flex; flex-direction: column; }
+        .nav-item { padding: 14px; margin: 4px 0; border-radius: 10px; cursor: pointer; color: #94a3b8; display: flex; align-items: center; gap: 12px; }
+        .nav-item.active { background: rgba(255,255,255,0.1); color: white; }
+        .badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: auto; display: none; }
+
+        main { background: var(--bg); padding: 2rem; overflow-y: auto; padding-bottom: 100px; }
+        .card { background: white; padding: 1.5rem; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 1rem; }
+        
+        /* LINHAS E BOTÕES */
+        .transaction-row, .solicitacao-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; align-items: center; }
+        .solicitacao-row { cursor: pointer; transition: 0.2s; padding: 15px; border-radius: 8px; background: #fff; border: 1px solid #eee; margin-bottom: 10px; }
+        .solicitacao-row:hover { background: #f0f9ff; border-color: var(--accent); }
+        
+        /* MOBILE NAV */
+        .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #e2e8f0; justify-content: space-around; padding: 10px 0; z-index: 100; }
+        .b-nav-item { text-align: center; color: #94a3b8; font-size: 0.75rem; flex: 1; padding: 10px; }
+        .b-nav-item i { font-size: 1.4rem; display: block; margin-bottom: 2px; }
+        .b-nav-item.active { color: var(--accent); }
+
+        /* FORM CONTRATO */
+        .form-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .form-col { flex: 1; }
+        label { font-size: 12px; font-weight: bold; color: #64748b; display: block; margin-bottom: 3px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+        .calc-box { background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 20px; }
+
+        @media (max-width: 768px) {
+            #app-container { grid-template-columns: 1fr; display: block; }
+            aside { display: none; }
+            .bottom-nav { display: flex; }
+        }
+    </style>
+</head>
+<body>
+    <div id="login-screen">
+        <div class="login-card">
+            <h2 style="color:var(--primary)">Nexus V11</h2>
+            <p style="color:#64748b; margin-bottom:20px">Sistema de Gestão</p>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Senha">
+            <button class="btn" onclick="app.login()">ACESSAR</button>
+            <p id="msg-erro" style="color:red; margin-top:10px"></p>
+        </div>
+    </div>
+
+    <div id="app-container">
+        <aside>
+            <div style="font-size:1.5rem; font-weight:700; margin-bottom:2rem; color:var(--accent);"><i class="fas fa-bus"></i> Tio Jonas</div>
+            <div class="nav-item active" onclick="app.nav('home')"><i class="fas fa-chart-pie"></i> Visão Geral</div>
+            <div class="nav-item" onclick="app.nav('contratos')">
+                <i class="fas fa-inbox"></i> Caixa de Entrada
+                <span id="badge-contratos" class="badge">0</span>
+            </div>
+            <div class="nav-item" onclick="app.nav('financeiro')"><i class="fas fa-wallet"></i> Financeiro</div>
+            <div class="nav-item" style="margin-top:auto" onclick="app.logout()"><i class="fas fa-sign-out-alt"></i> Sair</div>
+        </aside>
+
+        <main>
+            <div id="view-home" class="view-section">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:1rem">
+                    <div class="card">
+                        <small>Saldo Total</small>
+                        <div class="value" id="kpi-saldo" style="color:var(--primary)">R$ 0,00</div>
+                    </div>
+                    <div class="card">
+                        <small>Entradas (Mês)</small>
+                        <div class="value" id="kpi-entrada" style="color:var(--success)">R$ 0,00</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h4>Despesas por Categoria</h4>
+                    <div style="height: 250px;"><canvas id="graficoRosca"></canvas></div>
+                </div>
+            </div>
+
+            <div id="view-contratos" class="view-section" style="display:none">
+                
+                <div class="card" style="border-left: 5px solid #f59e0b;">
+                    <h4 style="color:#d97706; display:flex; justify-content:space-between;">
+                        <span>🔔 Pedidos de Matrícula</span>
+                        <small id="contador-pendentes" style="font-weight:normal; color:#666">0 novos</small>
+                    </h4>
+                    <div id="lista-solicitacoes-content" style="margin-top:15px; max-height:200px; overflow-y:auto;">
+                        <p style="text-align:center; color:#ccc; padding:10px">Nenhum pedido pendente.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4 style="margin-bottom:15px">📄 Gerador & Editor</h4>
+                    
+                    <div style="margin-bottom: 20px; text-align: center;">
+                         <label style="cursor: pointer; background:#f1f5f9; padding:10px; border-radius:5px; font-size: 14px; font-weight: bold;">
+                            📂 1. Selecionar PDF Modelo
+                            <input type="file" id="pdfModelo" accept="application/pdf" style="display: none;">
+                        </label>
+                        <div id="nomeArquivo" style="font-size:12px; margin-top:5px; color:green;"></div>
+                    </div>
+
+                    <form id="formContrato">
+                        <h4>👤 Dados (Corrija se necessário)</h4>
+                        <div class="form-row"><div class="form-col"><label>Nome</label><input type="text" id="ctr_nome"></div><div class="form-col"><label>CPF</label><input type="text" id="ctr_cpf"></div></div>
+                        <div class="form-row"><div class="form-col"><label>RG</label><input type="text" id="ctr_rg"></div><div class="form-col"><label>Endereço</label><input type="text" id="ctr_end"></div></div>
+                        <div class="form-row"><div class="form-col"><label>Tel 1</label><input type="text" id="ctr_tel1"></div><div class="form-col"><label>Tel 2</label><input type="text" id="ctr_tel2"></div></div>
+
+                        <h4 style="margin-top:15px">🎓 Alunos</h4>
+                        <div class="form-row"><div class="form-col"><label>Aluno 1</label><input type="text" id="ctr_aluno1"></div><div class="form-col"><label>Aluno 2</label><input type="text" id="ctr_aluno2"></div></div>
+                        <div class="form-row"><div class="form-col"><label>Escola</label><input type="text" id="ctr_escola"></div><div class="form-col"><label>Horário</label><input type="text" id="ctr_horario"></div></div>
+
+                        <div class="calc-box">
+                            <h4 style="color:#d39e00">💰 Financeiro</h4>
+                            <div class="form-row">
+                                <div class="form-col"><label>Total (R$)</label><input type="number" id="ctr_total" oninput="contrato.calcular()" placeholder="Ex: 3000"></div>
+                                <div class="form-col"><label>Parcelas</label><input type="number" id="ctr_parc" value="12" oninput="contrato.calcular()"></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-col"><label>Mensal (R$)</label><input type="text" id="ctr_mensal" readonly style="background:#eee"></div>
+                                <div class="form-col"><label>Dia Venc.</label><input type="number" id="ctr_dia" value="10"></div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn" onclick="contrato.gerarEsalvar()" style="margin-top:20px; background:var(--primary)">APROVAR E GERAR</button>
+                        <input type="hidden" id="id_solicitacao_atual">
+                    </form>
+                </div>
+            </div>
+
+            <div id="view-financeiro" class="view-section" style="display:none">
+                <div class="card">
+                    <h4>Extrato Financeiro</h4>
+                    <div id="lista-financeiro"></div>
+                </div>
+            </div>
+        </main>
+
+        <nav class="bottom-nav">
+            <div class="b-nav-item active" onclick="app.nav('home', this)"><i class="fas fa-chart-pie"></i></div>
+            <div class="b-nav-item" onclick="app.nav('contratos', this)">
+                <i class="fas fa-inbox"></i>
+                <span id="badge-mobile" style="color:red; font-weight:bold; font-size:14px; display:none">•</span>
+            </div>
+            <div class="b-nav-item" onclick="app.nav('financeiro', this)"><i class="fas fa-wallet"></i></div>
+        </nav>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCTvlujToSUX3JvLakYv9Dwt-9B7sgW7t8",
+            authDomain: "financeiro-32139.firebaseapp.com",
+            projectId: "financeiro-32139",
+            storageBucket: "financeiro-32139.firebasestorage.app",
+            messagingSenderId: "929380352090",
+            appId: "1:929380352090:web:e5ea8655635e8f52e05863"
+        };
+
+        const appInstance = initializeApp(firebaseConfig);
+        const auth = getAuth(appInstance);
+        const db = getFirestore(appInstance);
+        
+        let currentUser = null;
+        let chart = null;
+        let dbData = [];
+        let solicitacoesData = [];
+
+        const app = {
+            login: async () => {
+                try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); }
+                catch(e) { document.getElementById('msg-erro').innerText = "Erro: " + e.code; }
+            },
+            logout: () => signOut(auth),
+            nav: (tela, elem) => {
+                document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.nav-item, .b-nav-item').forEach(el => el.classList.remove('active'));
+                document.getElementById('view-'+tela).style.display = 'block';
+                if(elem) elem.classList.add('active');
+            },
+            deletar: async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "transacoes", id)); },
+            
+            carregarDados: () => {
+                let saldo = 0, entrada = 0, cats = {};
+                const divFin = document.getElementById('lista-financeiro');
+                divFin.innerHTML = '';
+                dbData.sort((a,b) => new Date(b.data) - new Date(a.data));
+
+                dbData.forEach(t => {
+                    if(t.tipo === 'entrada') saldo += t.valor; else saldo -= t.valor;
+                    if(t.tipo === 'entrada') entrada += t.valor;
+                    if(t.tipo === 'saida') cats[t.categoria||'Outros'] = (cats[t.categoria]||0) + t.valor;
+                    
+                    divFin.innerHTML += `<div class="transaction-row"><div><b>${t.desc}</b><br><small>${t.data.split('-').reverse().join('/')}</small></div><div style="text-align:right"><b style="color:${t.tipo==='entrada'?'green':'red'}">R$ ${t.valor.toFixed(2)}</b> <i class="fas fa-trash" onclick="app.deletar('${t.id}')"></i></div></div>`;
+                });
+                document.getElementById('kpi-saldo').innerText = `R$ ${saldo.toFixed(2)}`;
+                document.getElementById('kpi-entrada').innerText = `R$ ${entrada.toFixed(2)}`;
+                app.atualizarGrafico(cats);
+            },
+            
+            atualizarGrafico: (dados) => {
+                const ctx = document.getElementById('graficoRosca').getContext('2d');
+                if(chart) chart.destroy();
+                chart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(dados), datasets: [{ data: Object.values(dados), backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#10b981'] }] }, options: { plugins: { legend: {position:'right'} } } });
+            },
+
+            carregarSolicitacoes: () => {
+                const lista = document.getElementById('lista-solicitacoes-content');
+                const badge = document.getElementById('badge-contratos');
+                const badgeMobile = document.getElementById('badge-mobile');
+                const contador = document.getElementById('contador-pendentes');
+                lista.innerHTML = '';
+                let pendentes = 0;
+
+                solicitacoesData.forEach(s => {
+                    if(s.status === 'pendente') {
+                        pendentes++;
+                        const div = document.createElement('div');
+                        div.className = 'solicitacao-row';
+                        div.innerHTML = `<div><b>${s.cliente_nome}</b><br><small>${s.aluno_nome_1}</small></div><button class="btn" style="width:auto; padding:5px 15px; font-size:12px">ABRIR</button>`;
+                        div.onclick = () => contrato.preencherForm(s);
+                        lista.appendChild(div);
+                    }
+                });
+                badge.innerText = pendentes;
+                badge.style.display = pendentes > 0 ? 'inline-block' : 'none';
+                badgeMobile.style.display = pendentes > 0 ? 'inline' : 'none';
+                contador.innerText = `${pendentes} novos`;
+                if(pendentes === 0) lista.innerHTML = '<p style="text-align:center; color:#ccc; padding:10px">Nenhum pedido novo.</p>';
+            }
+        };
+
+        const contrato = {
+            preencherForm: (dados) => {
+                const set = (id, val) => document.getElementById(id).value = val || "";
+                set('ctr_nome', dados.cliente_nome);
+                set('ctr_cpf', dados.cliente_cpf);
+                set('ctr_rg', dados.cliente_rg);
+                set('ctr_end', dados.cliente_endereco);
+                set('ctr_tel1', dados.cliente_telefone);
+                set('ctr_tel2', dados.cliente_telefone_2);
+                set('ctr_aluno1', dados.aluno_nome_1);
+                set('ctr_aluno2', dados.aluno_nome_2);
+                set('ctr_escola', dados.escola_nome);
+                set('ctr_horario', dados.escola_horario);
+                document.getElementById('id_solicitacao_atual').value = dados.id;
+            },
+            calcular: () => {
+                const t = parseFloat(document.getElementById('ctr_total').value)||0;
+                const p = parseFloat(document.getElementById('ctr_parc').value)||1;
+                document.getElementById('ctr_mensal').value = (t/p).toFixed(2);
+            },
+            gerarEsalvar: async () => {
+                const fileInput = document.getElementById('pdfModelo');
+                if(fileInput.files.length === 0) return alert("Selecione o PDF!");
+                try {
+                    const { PDFDocument } = PDFLib;
+                    const pdfDoc = await PDFDocument.load(await fileInput.files[0].arrayBuffer());
+                    const form = pdfDoc.getForm();
+                    const val = (id) => document.getElementById(id).value;
+                    const fill = (n,v) => { try{ form.getTextField(n).setText(v) }catch(e){} };
+
+                    // MAPEAMENTO OFICIAL (Baseado na sua última versão)
+                    fill('Text1', val('ctr_nome')); fill('Text3', val('ctr_cpf')); fill('Text4', val('ctr_rg'));
+                    fill('Text5', val('ctr_end')); fill('Text6', val('ctr_tel1')); fill('Text7', val('ctr_tel2'));
+                    fill('Text8', val('ctr_aluno1')); fill('Text9', val('ctr_aluno2'));
+                    fill('Text11', val('ctr_escola')); fill('Text12', val('ctr_horario'));
+                    fill('Text18', val('ctr_total')); fill('Text19', val('ctr_mensal'));
+                    fill('Text20', val('ctr_parc')); fill('Text21', val('ctr_dia'));
+                    try{ form.getTextField('Text13').setText('Tio Jonas Transportes'); }catch(e){}
+
+                    form.flatten();
+                    const pdfBytes = await pdfDoc.save();
+                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `Contrato_${val('ctr_nome')}.pdf`;
+                    link.click();
+
+                    if(confirm("Confirmar baixa na solicitação e lançamento financeiro?")) {
+                        const total = parseFloat(val('ctr_total'));
+                        const parc = parseInt(val('ctr_parc'));
+                        const mensal = total/parc;
+                        const dia = parseInt(val('ctr_dia'));
+                        const aluno = val('ctr_aluno1');
+                        const promises = [];
+                        const hoje = new Date();
+
+                        for(let i=0; i<parc; i++) {
+                            let dt = new Date(hoje.getFullYear(), hoje.getMonth()+i, dia);
+                            promises.push(addDoc(collection(db, "transacoes"), {
+                                uid: currentUser.uid, tipo: 'entrada', desc: `Mensalidade ${aluno} (${i+1}/${parc})`,
+                                valor: parseFloat(mensal.toFixed(2)), data: dt.toISOString().split('T')[0], categoria: 'Transporte Escolar'
+                            }));
+                        }
+                        const idSol = document.getElementById('id_solicitacao_atual').value;
+                        if(idSol) promises.push(updateDoc(doc(db, "solicitacoes", idSol), { status: 'aprovado' }));
+
+                        await Promise.all(promises);
+                        alert("✅ Processo concluído!");
+                        app.nav('financeiro');
+                    }
+                } catch(e) { alert("Erro: " + e.message); }
+            }
+        };
+
+        window.app = app; window.contrato = contrato;
+
+        onAuthStateChanged(auth, (user) => {
+            if(user) {
+                currentUser = user;
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-container').style.display = 'grid';
+                if(window.innerWidth <= 768) document.getElementById('app-container').style.display = 'block';
+
+                onSnapshot(query(collection(db, "transacoes"), where("uid", "==", user.uid)), (snap) => {
+                    dbData = []; snap.forEach(d => dbData.push({id: d.id, ...d.data()})); app.carregarDados();
+                });
+                onSnapshot(collection(db, "solicitacoes"), (snap) => {
+                    solicitacoesData = []; snap.forEach(d => solicitacoesData.push({id: d.id, ...d.data()})); app.carregarSolicitacoes();
+                });
+            } else {
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('app-container').style.display = 'none';
+            }
+        });
+        
+        document.getElementById('pdfModelo').addEventListener('change', function(e) { if(e.target.files[0]) document.getElementById('nomeArquivo').innerText = "✅ " + e.target.files[0].name; });
+    </script>
+</body>
+</html>

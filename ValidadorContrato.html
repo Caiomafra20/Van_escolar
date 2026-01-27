@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Detetive de Campos PDF</title>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #333; color: white; }
+        .box { background: #444; padding: 20px; border-radius: 10px; max-width: 600px; margin: 0 auto; text-align: center; }
+        #lista { margin-top: 20px; text-align: left; background: #222; padding: 15px; border-radius: 5px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>🕵️‍♂️ Detetive de PDF</h2>
+        <p>Selecione o arquivo 'Contrato_Van.pdf' para ver os nomes ocultos:</p>
+        <input type="file" id="meuPDF" accept="application/pdf">
+        <br><br>
+        <button onclick="investigar()">🔍 Listar Campos Encontrados</button>
+        
+        <div id="lista">Os nomes aparecerão aqui...</div>
+    </div>
+
+    <script>
+        async function investigar() {
+            const input = document.getElementById('meuPDF');
+            if (input.files.length === 0) { alert("Selecione o arquivo!"); return; }
+
+            try {
+                const arrayBuffer = await input.files[0].arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                const form = pdfDoc.getForm();
+                const fields = form.getFields();
+
+                if (fields.length === 0) {
+                    document.getElementById('lista').innerHTML = "❌ NENHUM CAMPO ENCONTRADO.<br>Esse PDF parece ser apenas uma imagem (sem formulário).";
+                    return;
+                }
+
+                const nomes = fields.map(f => f.getName());
+                document.getElementById('lista').innerHTML = "✅ <b>Campos encontrados:</b><br><br>" + nomes.join("<br>");
+            } catch (e) {
+                alert("Erro ao ler PDF: " + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
