@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+[<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -12,7 +12,12 @@
         button { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; }
         button:disabled { background: #ccc; cursor: not-allowed; }
         .success-msg { display: none; text-align: center; color: #27ae60; margin-top: 20px; font-weight: bold; }
+        
+        /* Área do Filho 2 - Inicialmente Oculta */
         .filho-2-area { display: none; background: #fff8e1; padding: 15px; border-radius: 8px; border: 1px dashed #d39e00; margin-top: 10px; }
+        
+        /* Título interno para separar visualmente */
+        h4 { margin: 5px 0 10px 0; color: #d39e00; }
     </style>
 </head>
 <body>
@@ -37,9 +42,10 @@
             </select>
 
             <div style="background:#f9f9f9; padding:15px; border-radius:8px;">
+                <h4>Aluno 01</h4>
                 <input type="text" id="aluno_nome_1" placeholder="Nome do Aluno 01">
                 <select id="escola_nome">
-                    <option value="">Selecione a Escola...</option>
+                    <option value="">Selecione a Escola (Aluno 1)...</option>
                     <option value="Adventista">Adventista</option>
                     <option value="Delta">Delta</option>
                     <option value="Escola 3">Escola 3</option>
@@ -49,7 +55,7 @@
                     <option value="COC">COC</option>
                 </select>
                 <select id="escola_horario">
-                    <option value="">Selecione o Horário...</option>
+                    <option value="">Selecione o Horário (Aluno 1)...</option>
                     <option value="Matutino">Matutino (Manhã)</option>
                     <option value="Vespertino">Vespertino (Tarde)</option>
                     <option value="Integral">Integral</option>
@@ -57,8 +63,25 @@
             </div>
 
             <div id="area_filho_2" class="filho-2-area">
+                <h4>Aluno 02</h4>
                 <input type="text" id="aluno_nome_2" placeholder="Nome do Aluno 02">
-                <small>*Considerando mesma escola.</small>
+                
+                <select id="escola_nome_2">
+                    <option value="">Selecione a Escola (Aluno 2)...</option>
+                    <option value="Adventista">Adventista</option>
+                    <option value="Delta">Delta</option>
+                    <option value="Escola 3">Escola 3</option>
+                    <option value="Escola 4">Escola 4</option>
+                    <option value="Paraná">Paraná</option>
+                    <option value="CEF 04">CEF 04</option>
+                    <option value="COC">COC</option>
+                </select>
+                <select id="escola_horario_2">
+                    <option value="">Selecione o Horário (Aluno 2)...</option>
+                    <option value="Matutino">Matutino (Manhã)</option>
+                    <option value="Vespertino">Vespertino (Tarde)</option>
+                    <option value="Integral">Integral</option>
+                </select>
             </div>
 
             <button type="button" id="btnEnviar" onclick="enviarPedido()">✅ ENVIAR SOLICITAÇÃO</button>
@@ -85,8 +108,10 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // Função para mostrar/esconder a div do filho 2
         window.mostrarFilho2 = function() {
             const qtd = document.getElementById('qtd_filhos').value;
+            // Altera o display do container inteiro do filho 2
             document.getElementById('area_filho_2').style.display = (qtd === '2') ? 'block' : 'none';
         };
 
@@ -95,6 +120,9 @@
             btn.disabled = true;
             btn.innerText = "Enviando...";
 
+            // Verifica se está selecionado 2 filhos
+            const temDoisFilhos = document.getElementById('qtd_filhos').value === '2';
+
             const dados = {
                 cliente_nome: document.getElementById('cliente_nome').value,
                 cliente_cpf: document.getElementById('cliente_cpf').value,
@@ -102,11 +130,18 @@
                 cliente_endereco: document.getElementById('cliente_endereco').value,
                 cliente_telefone: document.getElementById('cliente_telefone').value,
                 cliente_telefone_2: document.getElementById('cliente_telefone_2').value,
+                
+                // Dados Aluno 1
                 aluno_nome_1: document.getElementById('aluno_nome_1').value,
-                aluno_nome_2: document.getElementById('qtd_filhos').value === '2' ? document.getElementById('aluno_nome_2').value : "",
-                escola_nome: document.getElementById('escola_nome').value,
-                escola_horario: document.getElementById('escola_horario').value,
-                status: 'pendente', // IMPORTANTE PARA O SEU SISTEMA VER
+                escola_nome_1: document.getElementById('escola_nome').value, // Renomeei no banco para ficar padrao
+                escola_horario_1: document.getElementById('escola_horario').value,
+                
+                // Dados Aluno 2 (Salva vazio se não tiver selecionado 2 filhos)
+                aluno_nome_2: temDoisFilhos ? document.getElementById('aluno_nome_2').value : "",
+                escola_nome_2: temDoisFilhos ? document.getElementById('escola_nome_2').value : "",
+                escola_horario_2: temDoisFilhos ? document.getElementById('escola_horario_2').value : "",
+
+                status: 'pendente',
                 data_pedido: new Date().toISOString()
             };
 
@@ -122,6 +157,9 @@
                 await addDoc(collection(db, "solicitacoes"), dados);
                 
                 document.getElementById('formPais').reset();
+                // Garante que o campo do filho 2 se esconda ao resetar o form
+                document.getElementById('area_filho_2').style.display = 'none'; 
+                
                 btn.style.display = 'none';
                 document.getElementById('msgSucesso').style.display = 'block';
             } catch (e) {
@@ -132,4 +170,4 @@
         };
     </script>
 </body>
-</html>
+</html>]
