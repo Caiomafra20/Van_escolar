@@ -4,14 +4,14 @@ import { getFirestore, type Firestore } from "firebase/firestore"
 import { getStorage, type FirebaseStorage } from "firebase/storage"
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "",
-}
+  apiKey: "AIzaSyCTvlujToSUX3JvLakYv9Dwt-9B7sgW7t8",
+  authDomain: "financeiro-32139.firebaseapp.com",
+  projectId: "financeiro-32139",
+  storageBucket: "financeiro-32139.firebasestorage.app",
+  messagingSenderId: "929380352090",
+  appId: "1:929380352090:web:e5ea8655635e8f52e05863",
+  measurementId: "G-L5CRVME2EP"
+};
 
 let app: FirebaseApp
 let auth: Auth
