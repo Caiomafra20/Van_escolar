@@ -360,28 +360,33 @@ function AlunoDetailModal({
               )}
 
               <button
-                onClick={() => {
-                  gerarContratoPDF(
-                    aluno.responsavel_nome,
-                    aluno.responsavel_cpf,
-                    aluno.endereco,
-                    aluno.telefone,
-                    [
-                      {
-                        nome: aluno.nome,
-                        escola: aluno.escola,
-                        turno: aluno.turno,
-                      },
-                    ],
-                    aluno.contrato
-                  )
-                }}
-                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-transparent px-4 py-2.5 text-sm font-medium text-foreground"
-                type="button"
-              >
-                <FileText className="h-4 w-4" />
-                Gerar contrato para impressao
-              </button>
+  onClick={() => {
+    if (!aluno.contrato) {
+      toast.error("Este aluno ainda não possui dados de contrato.")
+      return
+    }
+
+    gerarContratoPDF(
+      aluno.responsavel_nome,
+      aluno.responsavel_cpf,
+      aluno.endereco,
+      aluno.telefone,
+      [
+        {
+          nome: aluno.nome,
+          escola: aluno.escola,
+          turno: aluno.turno,
+        },
+      ],
+      aluno.contrato
+    )
+  }}
+  className="flex items-center justify-center gap-2 rounded-xl border border-border bg-transparent px-4 py-2.5 text-sm font-medium text-foreground"
+  type="button"
+>
+  <FileText className="h-4 w-4" />
+  Gerar contrato para impressão
+</button>
             </div>
           )}
 
